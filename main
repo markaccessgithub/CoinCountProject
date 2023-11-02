@@ -1,0 +1,221 @@
+import json
+
+
+def CoinValid(coin):
+  coinlist = ["1p", "2p", "5p", "10p", "20p", "50p", "£1",
+              "£2"]  #list of coins
+  valid = 0
+  for i in range(8):  #one loop for each coin
+    if coin == coinlist[i - 1]:
+      valid = 1
+      return valid  #returns 1 if the coin is valid
+  return valid
+
+
+def WeightValid(coin, weight):
+  valid = 0
+  correction = 0
+  coinlist = ["1p", "2p", "5p", "10p", "20p", "50p", "£1", "£2"]
+  coinweight = [356, 356.0, 235.0, 325, 250, 160, 175, 120]
+  weightlist = [3.56, 7.12, 2.35, 6.50, 5.00, 8.00, 8.75, 12.00]
+  count = 0  #count is used for the index of each list
+  mistake = 0  # a list corresponding to the weight of each coin and bag is used
+  while count <= 7:
+    if coin == coinlist[count]:
+      if weight == coinweight[count]:
+        valid = 1
+        return valid
+      else:
+        if weight > coinweight[count]:
+          mistake = round((weight - coinweight[count]), 2)
+          correction = mistake / weightlist[count]
+          print(mistake, "grams over")
+          print("Take out", int(correction), "coins")
+          return valid
+        else:
+          mistake = round((coinweight[count] - weight), 2)
+          correction = mistake / weightlist[count]
+          print(mistake, "grams under")
+          print("add", int(correction), "coins")
+          return valid
+    else:
+      count = count + 1
+  return valid
+
+
+def bagValue(coin):
+  coinlist = ["1p", "2p", "5p", "10p", "20p", "50p", "£1", "£2"]
+  bagValues = [["1p", 1], ["2p", 2], ["5p", 5], ["10p", 5], ["20p", 10],
+               ["50p", 10], ["£1", 20],
+               ["£2", 20]]  #different line used due to replit length limit
+  count = 0
+  value = 0
+  while count < len(bagValues):
+    if coin == coinlist[count]:
+      value = bagValues[count][1]  #value set to corresponding bag
+    count += 1
+  return value
+
+
+repeat = 0
+while repeat == 0:  #this is used to repeat code if needed later
+  bagtotal = 0
+  weight = 0
+  coin = 0  #define each variable
+  weightvalid = 0
+  coinvalid = 0
+  choice = input(
+      "Do you want to add, view or see total? Enter add, view or total: ")
+  if choice == "add":
+    name = input("Enter your name: ")
+    while coinvalid == 0:  #repeats if wrong coin entered
+      coin = input(
+          "Enter which coin you sorted, 1p, 2p, 5p, 10p, 20p, 50p, £1 or £2: ")
+      weight = float(input("Input the weight of your bag in grams: "))
+      coinvalid = CoinValid(coin)
+      if coinvalid == 1:
+        print("Valid coin type")
+
+      elif coinvalid == 0:
+        print("Invalid coin type")
+    weightvalid = WeightValid(coin, weight)
+    if weightvalid == 1:
+      with open("CoinCount.txt", "r") as f:
+        test_string = f.read()
+      file_dict = json.loads(test_string)
+      keys = list(file_dict.keys())
+      count = 0
+      found = 0
+      value = bagValue(coin)
+
+      while count < len(keys):
+        if keys[count] == name:  #this block updates user data to new values
+          found = 1
+          currenttotal = file_dict[name]["total"]
+          currentvalue = file_dict["total"]["value"]
+          file_dict["total"]["value"] = value + currentvalue
+          file_dict[name]["total"] = currenttotal + 1
+          currentcorrect = file_dict[name]["correct"]
+          file_dict[name]["correct"] = currentcorrect + 1
+          correct = file_dict[name]["correct"]
+          total = file_dict[name]["total"]
+          file_dict[name]["accuracy"] = round(correct / total * 100)
+        count = count + 1
+
+      if found == 0:
+        data = {name: {"total": 1, "correct": 1, "accuracy": 100}}
+        file_dict.update(data)
+        currentvalue = file_dict["total"]["value"]
+        file_dict["total"]["value"] = value + currentvalue
+        f.close()
+
+      new_data = json.dumps(file_dict)
+      with open("CoinCount.txt", "w") as f:
+        f.write(new_data)
+    elif weightvalid == 0:
+      with open("CoinCount.txt", "r") as f:
+        test_string = f.read()
+      file_dict = json.loads(test_string)
+      keys = list(file_dict.keys())
+      count = 0
+      found = 0
+      value = bagValue(coin)
+
+      while count < len(keys):
+        if keys[count] == name:  #this block updates user data to new values
+          found = 1
+          currentvalue = file_dict["total"]["value"]
+          file_dict["total"]["value"] = value + currentvalue
+          currenttotal = file_dict[name]["total"]
+          file_dict[name]["total"] = currenttotal + 1
+          currenttotal = file_dict[name]["total"]
+          currentcorrect = file_dict[name]["correct"]
+          file_dict[name]["accuracy"] = currentcorrect / currenttotal * 100
+        count = count + 1
+
+      if found == 0:
+        data = {name: {"total": 1, "correct": 0, "accuracy": 0}}
+        file_dict.update(data)
+        currentvalue = file_dict["total"]["value"]
+        file_dict["total"]["value"] = value + currentvalue
+      json_data = json.dumps(file_dict)
+      with open("CoinCount.txt", "w") as f:
+        f.write(json_data)
+      print("Incorrect Weight")
+
+  elif choice == "view":
+    search = input("Enter user you want to view: ")
+    with open("CoinCount.txt", "r") as f:
+      test_string = f.read()
+    file_dict = json.loads(test_string)
+    keys = list(file_dict.keys())
+    count = 0
+    found = 0
+
+    while count < len(keys):
+      if keys[count] == search:  #this block updates user data to new values
+        found = 1
+        total = file_dict[search]["total"]
+        correct = file_dict[search]["correct"]
+        accuracy = file_dict[search]["accuracy"]
+        print("--------------------------------------")
+        print(search, "total bags sorted is", total)
+        print("--------------------------------------")
+        print(search, "total bags sorted correctly is", correct)
+        print("--------------------------------------")
+        print(search, "accuracy is", accuracy, "percent")
+        break
+      count = count + 1
+    if found == 0:
+      print(search, "is not in list")
+
+  elif choice == "total":
+    with open("CoinCount.txt", "r") as f:
+      test_string = f.read()
+    file_dict = json.loads(test_string)
+    keys = list(file_dict.keys())
+    count = 0
+    bagtotal = 0
+
+    while count < len(keys):
+      current = keys[count]
+      total = int(file_dict[current]["total"])
+      bagtotal = bagtotal + total
+      count = count + 1
+    print("--------------------------------------")
+    print("Total bags counted is", bagtotal)
+    print("--------------------------------------")
+    value = file_dict["total"]["value"]
+    print("Total money sorted is", "£" + str(value))
+
+    count = 0
+    leaderboard = {}
+    while count < len(keys):
+      currentkey = keys[count]
+      add = {currentkey: file_dict[currentkey]["accuracy"]}
+      leaderboard.update(add)
+      count += 1
+    sort_lead = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
+    #sorts list by accuracy as [1] is the index of accuracy
+    print("Accuracy Leaderboard:")
+    print("--------------------------------------")
+    count = 0
+    realcount = 0
+    while count < len(keys):
+      if sort_lead[count][1] < 101:
+        currentkey = sort_lead[count][0]
+        total = file_dict[currentkey]["total"]
+        correct = file_dict[currentkey]["correct"]
+        print(
+            str(realcount + 1) + ".", sort_lead[count][0], "-",
+            str(round(sort_lead[count][1], 2)) + "%", "->", total, "sorted",
+            correct, "correct")
+        realcount += 1  #this is used so that our value data is ignored in the leaderboard
+      count += 1
+    print("--------------------------------------")
+  else:  #Tells user that choice is wrong
+    print("Invalid Option")
+  print("--------------------------------------")
+  run_again = input("Do you want to continue? Y or N: ")
+  if run_again == "N" or run_again == "n":
+    repeat = 1
